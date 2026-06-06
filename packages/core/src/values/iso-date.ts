@@ -1,4 +1,4 @@
-import { format, isValid, parse as parseDate } from "date-fns";
+import { addDays, format, isValid, parse as parseDate } from "date-fns";
 import { Result } from "../result.ts";
 
 export type IsoDate = string & { readonly __brand: "IsoDate" };
@@ -22,5 +22,9 @@ export const IsoDate = {
 
   today(): IsoDate {
     return new Date().toISOString().slice(0, 10) as IsoDate;
+  },
+
+  addDays(date: IsoDate, days: number): IsoDate {
+    return format(addDays(parseDate(date, FORMAT, REFERENCE), days), FORMAT) as IsoDate;
   },
 } as const;
