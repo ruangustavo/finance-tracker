@@ -1,6 +1,8 @@
 import type { Migration } from "kysely/migration";
 import { migration as initialSchema } from "./0001-initial-schema.ts";
+import { migration as balanceAnchors } from "./0002-balance-anchors.ts";
 
 export const MIGRATIONS: Record<string, Migration> = {
   "0001-initial-schema": initialSchema,
+  "0002-balance-anchors": balanceAnchors,
 };
