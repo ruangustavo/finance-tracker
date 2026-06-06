@@ -6,6 +6,7 @@ import { edit } from "./commands/edit.ts";
 import { entries } from "./commands/entries.ts";
 import { fatura } from "./commands/fatura.ts";
 import { installment } from "./commands/installment.ts";
+import { possoComprar } from "./commands/posso-comprar.ts";
 import { projecao } from "./commands/projecao.ts";
 import { recurring } from "./commands/recurring.ts";
 import { register } from "./commands/register.ts";
@@ -32,6 +33,7 @@ const main = defineCommand({
     fatura,
     projecao,
     status,
+    "posso-comprar": possoComprar,
   },
 });
 
