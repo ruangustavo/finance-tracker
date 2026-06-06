@@ -3,6 +3,7 @@ import { anchor } from "./commands/anchor.ts";
 import { balance } from "./commands/balance.ts";
 import { edit } from "./commands/edit.ts";
 import { entries } from "./commands/entries.ts";
+import { installment } from "./commands/installment.ts";
 import { projecao } from "./commands/projecao.ts";
 import { recurring } from "./commands/recurring.ts";
 import { register } from "./commands/register.ts";
@@ -24,6 +25,7 @@ const main = defineCommand({
     anchor,
     balance,
     recurring,
+    installment,
     projecao,
     status,
   },

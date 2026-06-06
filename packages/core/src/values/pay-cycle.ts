@@ -49,6 +49,17 @@ export const PayCycle = {
     };
   },
 
+  priorWindow(anchorDay: number, today: IsoDate, cycles: number): PayCycle {
+    const current = PayCycle.current(anchorDay, today);
+    const currentFrom = parseDate(current.from, FORMAT, REFERENCE);
+    const from = setDate(subMonths(currentFrom, cycles), anchorDay);
+    const to = subDays(currentFrom, 1);
+    return {
+      from: format(from, FORMAT) as IsoDate,
+      to: format(to, FORMAT) as IsoDate,
+    };
+  },
+
   upcoming(anchorDay: number, today: IsoDate, cycles: number): PayCycle {
     const current = PayCycle.current(anchorDay, today);
     const to = addMonths(parseDate(current.to, FORMAT, REFERENCE), cycles - 1);

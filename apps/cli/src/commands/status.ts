@@ -23,6 +23,7 @@ export const status = defineCommand({
         anchorDay: anchorDay.value,
         today: IsoDate.today(),
         cycles: 1,
+        dailyBudgetCents: null,
       });
       if (!projection.ok) {
         emit(projection);

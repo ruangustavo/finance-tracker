@@ -1,4 +1,4 @@
-import { BalanceStatus, IsoDate, PayCycle, Result, RollingProjection } from "@chatter/core";
+import { BalanceStatus, IsoDate, Money, PayCycle, Result, RollingProjection } from "@chatter/core";
 import { defineCommand } from "citty";
 import { openDb } from "../db.ts";
 import { emit } from "../output.ts";
@@ -24,6 +24,10 @@ export const projecao = defineCommand({
       default: "1",
       description: "Project N pay cycles ahead (default: 1)",
     },
+    dailyBudget: {
+      type: "string",
+      description: "Daily variable-spend budget in BRL (reference only; seeds cold-start pace)",
+    },
   },
   async run({ args }) {
     const db = await openDb();
@@ -38,10 +42,20 @@ export const projecao = defineCommand({
         emit(cycles);
         return;
       }
+      let dailyBudgetCents: number | null = null;
+      if (args.dailyBudget !== undefined) {
+        const budget = Money.parse(args.dailyBudget);
+        if (!budget.ok) {
+          emit(budget);
+          return;
+        }
+        dailyBudgetCents = budget.value.cents;
+      }
       const projection = await RollingProjection.compute(db, {
         anchorDay: anchorDay.value,
         today: IsoDate.today(),
         cycles: cycles.value,
+        dailyBudgetCents,
       });
       if (!projection.ok) {
         emit(projection);

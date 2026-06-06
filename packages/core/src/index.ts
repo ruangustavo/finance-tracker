@@ -21,6 +21,16 @@ export type {
   RemoveError,
 } from "./domain/entry.ts";
 export { Entry, EntryType } from "./domain/entry.ts";
+export type {
+  EditError as InstallmentEditError,
+  EditInput as InstallmentEditInput,
+  Installment,
+  InstallmentPurchaseNotFound,
+  InvalidCount,
+  RegisterError as InstallmentRegisterError,
+  RegisterInput as InstallmentRegisterInput,
+} from "./domain/installment-purchase.ts";
+export { InstallmentPurchase } from "./domain/installment-purchase.ts";
 export type { CycleClose, ProjectionPoint } from "./domain/projection.ts";
 export { RollingProjection } from "./domain/projection.ts";
 export type {
@@ -34,6 +44,7 @@ export type {
 export { RecurringDefinition } from "./domain/recurring-definition.ts";
 export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
 export { Spending } from "./domain/spending.ts";
+export { SpendingPace } from "./domain/spending-pace.ts";
 export type { Err, Ok } from "./result.ts";
 export { Result } from "./result.ts";
 export type { InvalidDate } from "./values/iso-date.ts";
