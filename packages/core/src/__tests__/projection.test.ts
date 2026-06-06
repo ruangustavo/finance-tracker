@@ -5,6 +5,7 @@ import { Db } from "../db/client.ts";
 import type { DB } from "../db/schema.ts";
 import { BalanceAnchor } from "../domain/balance-anchor.ts";
 import type { EntryType, PaymentMethod } from "../domain/entry.ts";
+import { InstallmentPurchase } from "../domain/installment-purchase.ts";
 import { RollingProjection } from "../domain/projection.ts";
 import { RecurringDefinition } from "../domain/recurring-definition.ts";
 import { IsoDate } from "../values/iso-date.ts";
@@ -156,6 +157,29 @@ describe("RollingProjection.compute", () => {
     assert.equal(pointAt(curve, "2026-06-06"), 100000);
     assert.equal(pointAt(curve, "2026-06-07"), 80000); // transfer -200
     assert.equal(pointAt(curve, "2026-06-08"), 55000); // expense -250
+  });
+
+  it("drops the balance by each account installment on its charge date", async () => {
+    await BalanceAnchor.set(db, { amountRaw: "3000", dateRaw: "2026-06-01" });
+    await InstallmentPurchase.register(db, {
+      amountRaw: "200",
+      countRaw: "12",
+      categoryName: "moradia",
+      startRaw: "2026-06-10",
+    });
+
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 2,
+      dailyBudgetCents: null,
+    });
+    assert.ok(result.ok);
+    const { curve } = result.value;
+
+    assert.equal(pointAt(curve, "2026-06-09"), 300000);
+    assert.equal(pointAt(curve, "2026-06-10"), 280000); // installment 1/12
+    assert.equal(pointAt(curve, "2026-07-10"), 260000); // installment 2/12
   });
 
   it("ignores credit-card entries (cash basis)", async () => {

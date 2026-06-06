@@ -39,11 +39,27 @@ interface RecurringDefinitionsTable {
   updated_at: string;
 }
 
+interface InstallmentPurchasesTable {
+  id: string;
+  category_id: string;
+  amount_cents: number;
+  count: number;
+  day_of_month: number;
+  first_charge_on: string;
+  starts_on: string;
+  ends_on: string | null;
+  payment_method: "account";
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   categories: CategoriesTable;
   entries: EntriesTable;
   balance_anchors: BalanceAnchorsTable;
   recurring_definitions: RecurringDefinitionsTable;
+  installment_purchases: InstallmentPurchasesTable;
 }
 
 export type DB = Kysely<Database>;
