@@ -18,9 +18,13 @@ export type {
   RemoveError,
 } from "./domain/entry.ts";
 export { Entry } from "./domain/entry.ts";
+export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
+export { Spending } from "./domain/spending.ts";
 export type { Err, Ok } from "./result.ts";
 export { Result } from "./result.ts";
 export type { InvalidDate } from "./values/iso-date.ts";
 export { IsoDate } from "./values/iso-date.ts";
 export type { InvalidAmount } from "./values/money.ts";
 export { Money } from "./values/money.ts";
+export type { InvalidAnchorDay } from "./values/pay-cycle.ts";
+export { PayCycle } from "./values/pay-cycle.ts";
