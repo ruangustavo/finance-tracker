@@ -1,0 +1,24 @@
+{
+  "name": "chatter",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @chatter/core test",
+    "lint": "biome lint ./packages ./apps",
+    "format": "biome format --write ./packages ./apps",
+    "check": "biome check ./packages ./apps",
+    "fix": "biome check --write ./packages ./apps",
+    "ci": "biome ci ./packages ./apps",
+    "cli": "node apps/cli/src/main.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/node": "^25.9.2",
+    "typescript": "^6.0.3"
+  }
+}
