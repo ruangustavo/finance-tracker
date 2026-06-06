@@ -13,6 +13,19 @@ export type EntryType = "income" | "expense" | "transfer";
 export type Nature = "recurring" | "variable";
 export type PaymentMethod = "account" | "creditCard";
 
+const ENTRY_TYPES = ["income", "expense", "transfer"] as const;
+
+export type InvalidEntryType = Readonly<{ kind: "InvalidEntryType"; raw: string }>;
+
+export const EntryType = {
+  parse(raw: string): Result<EntryType, InvalidEntryType> {
+    const found = ENTRY_TYPES.find((t) => t === raw);
+    return found === undefined
+      ? Result.err({ kind: "InvalidEntryType", raw })
+      : Result.ok(found);
+  },
+} as const;
+
 export type Entry = Readonly<{
   id: string;
   type: EntryType;
@@ -27,9 +40,10 @@ export type Entry = Readonly<{
 }>;
 
 export type RegisterInput = Readonly<{
+  typeRaw?: string | undefined;
   amountRaw: string;
   dateRaw: string;
-  categoryName: string;
+  categoryName?: string | undefined;
   description?: string | undefined;
 }>;
 
@@ -46,7 +60,14 @@ export type EntryNotFound = Readonly<{
   id: string;
 }>;
 
-export type RegisterError = InvalidAmount | InvalidDate | UnknownCategory;
+export type CategoryRequired = Readonly<{ kind: "CategoryRequired" }>;
+
+export type RegisterError =
+  | InvalidAmount
+  | InvalidDate
+  | UnknownCategory
+  | InvalidEntryType
+  | CategoryRequired;
 export type EditError = RegisterError | EntryNotFound;
 export type RemoveError = EntryNotFound;
 
@@ -67,6 +88,11 @@ function rowToEntry(row: Selectable<Database["entries"]>): Entry {
 
 export const Entry = {
   async register(db: DB, input: RegisterInput): Promise<Result<Entry, RegisterError>> {
+    const type = EntryType.parse(input.typeRaw ?? "expense");
+    if (!type.ok) {
+      return type;
+    }
+
     const money = Money.parse(input.amountRaw);
     if (!money.ok) {
       return money;
@@ -77,18 +103,25 @@ export const Entry = {
       return date;
     }
 
-    const category = await Category.findByName(db, input.categoryName);
-    if (!category.ok) {
-      return category;
+    let categoryId: string | null = null;
+    if (type.value === "expense") {
+      if (input.categoryName === undefined) {
+        return Result.err({ kind: "CategoryRequired" });
+      }
+      const category = await Category.findByName(db, input.categoryName);
+      if (!category.ok) {
+        return category;
+      }
+      categoryId = category.value.id;
     }
 
     const now = new Date().toISOString();
     const entry: Entry = {
       id: randomUUID(),
-      type: "expense",
+      type: type.value,
       nature: "variable",
       paymentMethod: "account",
-      categoryId: category.value.id,
+      categoryId,
       amountCents: money.value.cents,
       occurredOn: date.value,
       description: input.description ?? null,

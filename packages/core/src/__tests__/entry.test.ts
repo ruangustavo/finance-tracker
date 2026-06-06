@@ -72,6 +72,45 @@ describe("Entry", () => {
       assert.ok(result.ok);
       assert.equal(result.value.occurredOn, today);
     });
+
+    it("records income with no category", async () => {
+      const result = await Entry.register(db, {
+        typeRaw: "income",
+        amountRaw: "5000",
+        dateRaw: "2026-06-05",
+      });
+      assert.ok(result.ok);
+      assert.equal(result.value.type, "income");
+      assert.equal(result.value.categoryId, null);
+    });
+
+    it("records the payday investment as a transfer with no category", async () => {
+      const result = await Entry.register(db, {
+        typeRaw: "transfer",
+        amountRaw: "1000",
+        dateRaw: "2026-06-05",
+        description: "investment",
+      });
+      assert.ok(result.ok);
+      assert.equal(result.value.type, "transfer");
+      assert.equal(result.value.categoryId, null);
+    });
+
+    it("requires a category for an expense", async () => {
+      const result = await Entry.register(db, {
+        typeRaw: "expense",
+        amountRaw: "80",
+        dateRaw: "2026-06-05",
+      });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "CategoryRequired");
+    });
+
+    it("rejects an unknown entry type", async () => {
+      const result = await Entry.register(db, { ...validExpense, typeRaw: "refund" });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "InvalidEntryType");
+    });
   });
 
   describe("list", () => {

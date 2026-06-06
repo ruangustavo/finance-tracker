@@ -5,6 +5,7 @@ import { Db } from "../db/client.ts";
 import type { DB } from "../db/schema.ts";
 import { Balance } from "../domain/balance.ts";
 import { BalanceAnchor } from "../domain/balance-anchor.ts";
+import { Entry } from "../domain/entry.ts";
 import type { EntryType, PaymentMethod } from "../domain/entry.ts";
 
 type RawEntry = Readonly<{
@@ -138,5 +139,14 @@ describe("Balance.current", () => {
     const result = await Balance.current(db);
     assert.ok(result.ok);
     assert.equal(result.value.cents, 130000);
+  });
+
+  it("reflects income and transfers registered through Entry.register", async () => {
+    await BalanceAnchor.set(db, { amountRaw: "1000", dateRaw: "2026-06-01" });
+    await Entry.register(db, { typeRaw: "income", amountRaw: "500", dateRaw: "2026-06-05" });
+    await Entry.register(db, { typeRaw: "transfer", amountRaw: "200", dateRaw: "2026-06-05" });
+    const result = await Balance.current(db);
+    assert.ok(result.ok);
+    assert.equal(result.value.cents, 130000); // 100000 + 50000 - 20000
   });
 });
