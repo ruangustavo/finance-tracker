@@ -8,13 +8,25 @@ import { recurring } from "./commands/recurring.ts";
 import { register } from "./commands/register.ts";
 import { remove } from "./commands/remove.ts";
 import { spending } from "./commands/spending.ts";
+import { status } from "./commands/status.ts";
 
 const main = defineCommand({
   meta: {
     name: "chatter",
     description: "chatter — personal finance CLI",
   },
-  subCommands: { register, entries, edit, remove, spending, anchor, balance, recurring, projecao },
+  subCommands: {
+    register,
+    entries,
+    edit,
+    remove,
+    spending,
+    anchor,
+    balance,
+    recurring,
+    projecao,
+    status,
+  },
 });
 
 await runMain(main);
