@@ -9,18 +9,29 @@ export { BalanceStatus } from "./domain/balance-status.ts";
 export type { UnknownCategory } from "./domain/category.ts";
 export { Category } from "./domain/category.ts";
 export type {
+  CardNameRequired,
+  CardNotFound,
+  DuplicateCard,
+  RegisterError as CreditCardRegisterError,
+  RegisterInput as CreditCardRegisterInput,
+  UnknownCard,
+} from "./domain/credit-card.ts";
+export { CreditCard } from "./domain/credit-card.ts";
+export type {
+  CardNotAllowed,
+  CardRequired,
   CategoryRequired,
   EditError,
   EditInput,
   EntryNotFound,
   InvalidEntryType,
+  InvalidPaymentMethod,
   Nature,
-  PaymentMethod,
   RegisterError,
   RegisterInput,
   RemoveError,
 } from "./domain/entry.ts";
-export { Entry, EntryType } from "./domain/entry.ts";
+export { Entry, EntryType, PaymentMethod } from "./domain/entry.ts";
 export type {
   EditError as InstallmentEditError,
   EditInput as InstallmentEditInput,
@@ -45,6 +56,8 @@ export { RecurringDefinition } from "./domain/recurring-definition.ts";
 export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
 export { Spending } from "./domain/spending.ts";
 export { SpendingPace } from "./domain/spending-pace.ts";
+export type { StatementPurchase } from "./domain/statement.ts";
+export { Statement } from "./domain/statement.ts";
 export type { Err, Ok } from "./result.ts";
 export { Result } from "./result.ts";
 export type { InvalidDate } from "./values/iso-date.ts";

@@ -5,8 +5,23 @@ import { Db } from "../db/client.ts";
 import type { DB } from "../db/schema.ts";
 import { Balance } from "../domain/balance.ts";
 import { BalanceAnchor } from "../domain/balance-anchor.ts";
-import { Entry } from "../domain/entry.ts";
+import { CreditCard } from "../domain/credit-card.ts";
 import type { EntryType, PaymentMethod } from "../domain/entry.ts";
+import { Entry } from "../domain/entry.ts";
+import type { IsoDate } from "../values/iso-date.ts";
+
+const iso = (raw: string) => raw as IsoDate;
+
+async function cardPurchase(db: DB, amount: string, date: string): Promise<void> {
+  const result = await Entry.register(db, {
+    amountRaw: amount,
+    dateRaw: date,
+    categoryName: "mercado",
+    paymentMethodRaw: "creditCard",
+    cardName: "nubank",
+  });
+  assert.ok(result.ok);
+}
 
 type RawEntry = Readonly<{
   type: EntryType;
@@ -148,5 +163,42 @@ describe("Balance.current", () => {
     const result = await Balance.current(db);
     assert.ok(result.ok);
     assert.equal(result.value.cents, 130000); // 100000 + 50000 - 20000
+  });
+
+  describe("credit-card statements (cash basis)", () => {
+    beforeEach(async () => {
+      const card = await CreditCard.register(db, {
+        name: "nubank",
+        closingDayRaw: "28",
+        dueDayRaw: "5",
+      });
+      assert.ok(card.ok);
+    });
+
+    it("does not change the balance on the purchase date", async () => {
+      await BalanceAnchor.set(db, { amountRaw: "1000", dateRaw: "2026-06-01" });
+      await cardPurchase(db, "100", "2026-06-10"); // statement due 2026-07-05
+      const result = await Balance.current(db, iso("2026-06-15"));
+      assert.ok(result.ok);
+      assert.equal(result.value.cents, 100000);
+    });
+
+    it("does not subtract the statement before its due date", async () => {
+      await BalanceAnchor.set(db, { amountRaw: "1000", dateRaw: "2026-06-01" });
+      await cardPurchase(db, "100", "2026-06-10"); // due 2026-07-05
+      const result = await Balance.current(db, iso("2026-07-04"));
+      assert.ok(result.ok);
+      assert.equal(result.value.cents, 100000);
+    });
+
+    it("subtracts the statement once, on its due date", async () => {
+      await BalanceAnchor.set(db, { amountRaw: "1000", dateRaw: "2026-06-01" });
+      await cardPurchase(db, "100", "2026-06-10");
+      await cardPurchase(db, "50", "2026-06-20"); // same statement, due 2026-07-05
+      const result = await Balance.current(db, iso("2026-07-05"));
+      assert.ok(result.ok);
+      // No double counting: 100000 − 15000 (statement), not also − the two card entries.
+      assert.equal(result.value.cents, 85000);
+    });
   });
 });

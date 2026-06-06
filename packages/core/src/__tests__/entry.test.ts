@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { Db } from "../db/client.ts";
 import type { DB } from "../db/schema.ts";
+import { CreditCard } from "../domain/credit-card.ts";
 import { Entry } from "../domain/entry.ts";
 import { IsoDate } from "../values/iso-date.ts";
 
@@ -110,6 +111,52 @@ describe("Entry", () => {
       const result = await Entry.register(db, { ...validExpense, typeRaw: "refund" });
       assert.ok(!result.ok);
       assert.equal(result.error.kind, "InvalidEntryType");
+    });
+
+    it("records a credit-card expense against a registered card", async () => {
+      const card = await CreditCard.register(db, {
+        name: "nubank",
+        closingDayRaw: "28",
+        dueDayRaw: "5",
+      });
+      assert.ok(card.ok);
+      const result = await Entry.register(db, {
+        ...validExpense,
+        paymentMethodRaw: "creditCard",
+        cardName: "nubank",
+      });
+      assert.ok(result.ok);
+      assert.equal(result.value.paymentMethod, "creditCard");
+      assert.equal(result.value.cardId, card.value.id);
+    });
+
+    it("requires a card when paid by credit card", async () => {
+      const result = await Entry.register(db, { ...validExpense, paymentMethodRaw: "creditCard" });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "CardRequired");
+    });
+
+    it("rejects an unknown card", async () => {
+      const result = await Entry.register(db, {
+        ...validExpense,
+        paymentMethodRaw: "creditCard",
+        cardName: "ghost",
+      });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "UnknownCard");
+    });
+
+    it("rejects a card on an account payment", async () => {
+      await CreditCard.register(db, { name: "nubank", closingDayRaw: "28", dueDayRaw: "5" });
+      const result = await Entry.register(db, { ...validExpense, cardName: "nubank" });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "CardNotAllowed");
+    });
+
+    it("rejects an unknown payment method", async () => {
+      const result = await Entry.register(db, { ...validExpense, paymentMethodRaw: "pix" });
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "InvalidPaymentMethod");
     });
   });
 

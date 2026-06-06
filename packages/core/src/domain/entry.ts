@@ -8,20 +8,31 @@ import type { InvalidAmount } from "../values/money.ts";
 import { Money } from "../values/money.ts";
 import type { UnknownCategory } from "./category.ts";
 import { Category } from "./category.ts";
+import type { UnknownCard } from "./credit-card.ts";
+import { CreditCard } from "./credit-card.ts";
 
 export type EntryType = "income" | "expense" | "transfer";
 export type Nature = "recurring" | "variable";
 export type PaymentMethod = "account" | "creditCard";
 
 const ENTRY_TYPES = ["income", "expense", "transfer"] as const;
+const PAYMENT_METHODS = ["account", "creditCard"] as const;
 
 export type InvalidEntryType = Readonly<{ kind: "InvalidEntryType"; raw: string }>;
+export type InvalidPaymentMethod = Readonly<{ kind: "InvalidPaymentMethod"; raw: string }>;
 
 export const EntryType = {
   parse(raw: string): Result<EntryType, InvalidEntryType> {
     const found = ENTRY_TYPES.find((t) => t === raw);
+    return found === undefined ? Result.err({ kind: "InvalidEntryType", raw }) : Result.ok(found);
+  },
+} as const;
+
+export const PaymentMethod = {
+  parse(raw: string): Result<PaymentMethod, InvalidPaymentMethod> {
+    const found = PAYMENT_METHODS.find((m) => m === raw);
     return found === undefined
-      ? Result.err({ kind: "InvalidEntryType", raw })
+      ? Result.err({ kind: "InvalidPaymentMethod", raw })
       : Result.ok(found);
   },
 } as const;
@@ -32,6 +43,7 @@ export type Entry = Readonly<{
   nature: Nature;
   paymentMethod: PaymentMethod;
   categoryId: string | null;
+  cardId: string | null;
   amountCents: number;
   occurredOn: string;
   description: string | null;
@@ -44,6 +56,8 @@ export type RegisterInput = Readonly<{
   amountRaw: string;
   dateRaw: string;
   categoryName?: string | undefined;
+  paymentMethodRaw?: string | undefined;
+  cardName?: string | undefined;
   description?: string | undefined;
 }>;
 
@@ -61,13 +75,19 @@ export type EntryNotFound = Readonly<{
 }>;
 
 export type CategoryRequired = Readonly<{ kind: "CategoryRequired" }>;
+export type CardRequired = Readonly<{ kind: "CardRequired" }>;
+export type CardNotAllowed = Readonly<{ kind: "CardNotAllowed" }>;
 
 export type RegisterError =
   | InvalidAmount
   | InvalidDate
   | UnknownCategory
   | InvalidEntryType
-  | CategoryRequired;
+  | InvalidPaymentMethod
+  | CategoryRequired
+  | CardRequired
+  | CardNotAllowed
+  | UnknownCard;
 export type EditError = RegisterError | EntryNotFound;
 export type RemoveError = EntryNotFound;
 
@@ -78,6 +98,7 @@ function rowToEntry(row: Selectable<Database["entries"]>): Entry {
     nature: row.nature,
     paymentMethod: row.payment_method,
     categoryId: row.category_id,
+    cardId: row.card_id,
     amountCents: row.amount_cents,
     occurredOn: row.occurred_on,
     description: row.description,
@@ -103,6 +124,11 @@ export const Entry = {
       return date;
     }
 
+    const paymentMethod = PaymentMethod.parse(input.paymentMethodRaw ?? "account");
+    if (!paymentMethod.ok) {
+      return paymentMethod;
+    }
+
     let categoryId: string | null = null;
     if (type.value === "expense") {
       if (input.categoryName === undefined) {
@@ -115,13 +141,28 @@ export const Entry = {
       categoryId = category.value.id;
     }
 
+    let cardId: string | null = null;
+    if (paymentMethod.value === "creditCard") {
+      if (input.cardName === undefined) {
+        return Result.err({ kind: "CardRequired" });
+      }
+      const card = await CreditCard.findByName(db, input.cardName);
+      if (!card.ok) {
+        return card;
+      }
+      cardId = card.value.id;
+    } else if (input.cardName !== undefined) {
+      return Result.err({ kind: "CardNotAllowed" });
+    }
+
     const now = new Date().toISOString();
     const entry: Entry = {
       id: randomUUID(),
       type: type.value,
       nature: "variable",
-      paymentMethod: "account",
+      paymentMethod: paymentMethod.value,
       categoryId,
+      cardId,
       amountCents: money.value.cents,
       occurredOn: date.value,
       description: input.description ?? null,
@@ -137,6 +178,7 @@ export const Entry = {
         nature: entry.nature,
         payment_method: entry.paymentMethod,
         category_id: entry.categoryId,
+        card_id: entry.cardId,
         amount_cents: entry.amountCents,
         occurred_on: entry.occurredOn,
         description: entry.description,

@@ -12,9 +12,19 @@ interface EntriesTable {
   nature: Nature;
   payment_method: PaymentMethod;
   category_id: string | null;
+  card_id: string | null;
   amount_cents: number;
   occurred_on: string;
   description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreditCardsTable {
+  id: string;
+  name: string;
+  closing_day: number;
+  due_day: number;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +58,8 @@ interface InstallmentPurchasesTable {
   first_charge_on: string;
   starts_on: string;
   ends_on: string | null;
-  payment_method: "account";
+  payment_method: PaymentMethod;
+  card_id: string | null;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -57,6 +68,7 @@ interface InstallmentPurchasesTable {
 export interface Database {
   categories: CategoriesTable;
   entries: EntriesTable;
+  credit_cards: CreditCardsTable;
   balance_anchors: BalanceAnchorsTable;
   recurring_definitions: RecurringDefinitionsTable;
   installment_purchases: InstallmentPurchasesTable;
