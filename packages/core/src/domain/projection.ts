@@ -5,6 +5,7 @@ import { PayCycle } from "../values/pay-cycle.ts";
 import type { NoAnchorSet } from "./balance.ts";
 import { BalanceAnchor } from "./balance-anchor.ts";
 import type { EntryType } from "./entry.ts";
+import { InstallmentPurchase } from "./installment-purchase.ts";
 import { RecurringDefinition } from "./recurring-definition.ts";
 
 export type ProjectionPoint = Readonly<{ date: IsoDate; balanceCents: number }>;
@@ -62,6 +63,14 @@ export const RollingProjection = {
     });
     for (const occurrence of occurrences) {
       add(occurrence.occurredOn, signedDelta(occurrence.type, occurrence.amountCents));
+    }
+
+    const installments = await InstallmentPurchase.installments(db, {
+      from: IsoDate.addDays(anchoredOn, 1),
+      to: end,
+    });
+    for (const installment of installments) {
+      add(installment.occurredOn, -installment.amountCents);
     }
 
     const curve: ProjectionPoint[] = [];

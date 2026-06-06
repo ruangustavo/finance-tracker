@@ -19,6 +19,16 @@ export type {
   RemoveError,
 } from "./domain/entry.ts";
 export { Entry, EntryType } from "./domain/entry.ts";
+export type {
+  EditError as InstallmentEditError,
+  EditInput as InstallmentEditInput,
+  Installment,
+  InstallmentPurchaseNotFound,
+  InvalidCount,
+  RegisterError as InstallmentRegisterError,
+  RegisterInput as InstallmentRegisterInput,
+} from "./domain/installment-purchase.ts";
+export { InstallmentPurchase } from "./domain/installment-purchase.ts";
 export type { CycleClose, ProjectionPoint } from "./domain/projection.ts";
 export { RollingProjection } from "./domain/projection.ts";
 export type {
