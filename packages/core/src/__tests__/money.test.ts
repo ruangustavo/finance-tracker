@@ -28,6 +28,33 @@ describe("Money.parse", () => {
   }
 });
 
+describe("Money.parseSigned", () => {
+  const accepts: ReadonlyArray<[string, number]> = [
+    ["80", 8000],
+    ["80.50", 8050],
+    ["0", 0],
+    ["-80", -8000],
+    ["-0.01", -1],
+    [" -1500.75 ", -150075],
+  ];
+  for (const [raw, cents] of accepts) {
+    it(`parses ${JSON.stringify(raw)} -> ${cents} cents`, () => {
+      const result = Money.parseSigned(raw);
+      assert.ok(result.ok);
+      assert.equal(result.value.cents, cents);
+    });
+  }
+
+  const rejects: readonly string[] = ["abc", "80.123", "", "1,50", "-", "--1"];
+  for (const raw of rejects) {
+    it(`rejects ${JSON.stringify(raw)}`, () => {
+      const result = Money.parseSigned(raw);
+      assert.ok(!result.ok);
+      assert.equal(result.error.kind, "InvalidAmount");
+    });
+  }
+});
+
 describe("Money.format", () => {
   const NBSP = " ";
   it("formats cents in Brazilian currency format", () => {

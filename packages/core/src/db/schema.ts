@@ -19,9 +19,17 @@ interface EntriesTable {
   updated_at: string;
 }
 
+interface BalanceAnchorsTable {
+  id: string;
+  amount_cents: number;
+  anchored_on: string;
+  created_at: string;
+}
+
 export interface Database {
   categories: CategoriesTable;
   entries: EntriesTable;
+  balance_anchors: BalanceAnchorsTable;
 }
 
 export type DB = Kysely<Database>;
