@@ -26,10 +26,24 @@ interface BalanceAnchorsTable {
   created_at: string;
 }
 
+interface RecurringDefinitionsTable {
+  id: string;
+  type: EntryType;
+  category_id: string | null;
+  amount_cents: number;
+  day_of_month: number;
+  starts_on: string;
+  ends_on: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   categories: CategoriesTable;
   entries: EntriesTable;
   balance_anchors: BalanceAnchorsTable;
+  recurring_definitions: RecurringDefinitionsTable;
 }
 
 export type DB = Kysely<Database>;

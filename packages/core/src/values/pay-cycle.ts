@@ -48,4 +48,10 @@ export const PayCycle = {
       to: format(to, FORMAT) as IsoDate,
     };
   },
+
+  upcoming(anchorDay: number, today: IsoDate, cycles: number): PayCycle {
+    const current = PayCycle.current(anchorDay, today);
+    const to = addMonths(parseDate(current.to, FORMAT, REFERENCE), cycles - 1);
+    return { from: today, to: format(to, FORMAT) as IsoDate };
+  },
 } as const;

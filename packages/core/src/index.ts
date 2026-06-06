@@ -19,6 +19,15 @@ export type {
   RemoveError,
 } from "./domain/entry.ts";
 export { Entry, EntryType } from "./domain/entry.ts";
+export type {
+  EditError as RecurringEditError,
+  EditInput as RecurringEditInput,
+  Occurrence,
+  RecurringNotFound,
+  RegisterError as RecurringRegisterError,
+  RegisterInput as RecurringRegisterInput,
+} from "./domain/recurring-definition.ts";
+export { RecurringDefinition } from "./domain/recurring-definition.ts";
 export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
 export { Spending } from "./domain/spending.ts";
 export type { Err, Ok } from "./result.ts";
