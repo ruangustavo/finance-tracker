@@ -6,6 +6,7 @@ import type { NoAnchorSet } from "./balance.ts";
 import { BalanceAnchor } from "./balance-anchor.ts";
 import type { EntryType } from "./entry.ts";
 import { RecurringDefinition } from "./recurring-definition.ts";
+import { SpendingPace } from "./spending-pace.ts";
 
 export type ProjectionPoint = Readonly<{ date: IsoDate; balanceCents: number }>;
 
@@ -16,12 +17,14 @@ export type RollingProjection = Readonly<{
   to: IsoDate;
   curve: readonly ProjectionPoint[];
   cycleClose: CycleClose;
+  spendingPace: SpendingPace;
 }>;
 
 export type ComputeInput = Readonly<{
   anchorDay: number;
   today: IsoDate;
   cycles: number;
+  dailyBudgetCents: number | null;
 }>;
 
 function signedDelta(type: EntryType, amountCents: number): number {
@@ -64,6 +67,21 @@ export const RollingProjection = {
       add(occurrence.occurredOn, signedDelta(occurrence.type, occurrence.amountCents));
     }
 
+    const spendingPace = await SpendingPace.compute(db, {
+      anchorDay: input.anchorDay,
+      today: input.today,
+      dailyBudgetCents: input.dailyBudgetCents,
+    });
+    if (spendingPace.perDayCents !== 0) {
+      for (
+        let date = IsoDate.addDays(input.today, 1);
+        date <= end;
+        date = IsoDate.addDays(date, 1)
+      ) {
+        add(date, -spendingPace.perDayCents);
+      }
+    }
+
     const curve: ProjectionPoint[] = [];
     let running = anchor.amountCents;
     for (let date = anchoredOn; date <= end; date = IsoDate.addDays(date, 1)) {
@@ -80,6 +98,7 @@ export const RollingProjection = {
       to: end,
       curve,
       cycleClose: troughWithin(curve, currentCycle.to),
+      spendingPace,
     });
   },
 } as const;

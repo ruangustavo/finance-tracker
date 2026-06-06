@@ -47,4 +47,17 @@ export const Spending = {
 
     return { from: period.from, to: period.to, totalCents, byCategory };
   },
+
+  async variableExpenseTotal(db: DB, period: Period): Promise<number> {
+    const row = await db
+      .selectFrom("entries")
+      .select((eb) => eb.fn.sum("amount_cents").as("totalCents"))
+      .where("type", "=", "expense")
+      .where("nature", "=", "variable")
+      .where("payment_method", "=", "account")
+      .where("occurred_on", ">=", period.from)
+      .where("occurred_on", "<=", period.to)
+      .executeTakeFirst();
+    return Number(row?.totalCents ?? 0);
+  },
 } as const;

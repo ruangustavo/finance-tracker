@@ -54,7 +54,12 @@ describe("RollingProjection.compute", () => {
   });
 
   it("fails when no anchor is set", async () => {
-    const result = await RollingProjection.compute(db, { anchorDay: 5, today, cycles: 1 });
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 1,
+      dailyBudgetCents: null,
+    });
     assert.ok(!result.ok);
     assert.equal(result.error.kind, "NoAnchorSet");
   });
@@ -69,7 +74,12 @@ describe("RollingProjection.compute", () => {
       startRaw: "2026-01-01",
     });
 
-    const result = await RollingProjection.compute(db, { anchorDay: 5, today, cycles: 1 });
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 1,
+      dailyBudgetCents: null,
+    });
     assert.ok(result.ok);
     const { from, to, curve, cycleClose } = result.value;
 
@@ -102,7 +112,12 @@ describe("RollingProjection.compute", () => {
       startRaw: "2026-01-01",
     });
 
-    const result = await RollingProjection.compute(db, { anchorDay: 5, today, cycles: 2 });
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 2,
+      dailyBudgetCents: null,
+    });
     assert.ok(result.ok);
     const { to, curve, cycleClose } = result.value;
 
@@ -129,7 +144,12 @@ describe("RollingProjection.compute", () => {
       startRaw: "2026-01-01",
     });
 
-    const result = await RollingProjection.compute(db, { anchorDay: 5, today, cycles: 1 });
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 1,
+      dailyBudgetCents: null,
+    });
     assert.ok(result.ok);
     const { curve } = result.value;
 
@@ -147,7 +167,12 @@ describe("RollingProjection.compute", () => {
       occurredOn: "2026-06-08",
     });
 
-    const result = await RollingProjection.compute(db, { anchorDay: 5, today, cycles: 1 });
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 1,
+      dailyBudgetCents: null,
+    });
     assert.ok(result.ok);
     assert.equal(pointAt(result.value.curve, "2026-06-08"), 100000);
   });
@@ -163,7 +188,12 @@ describe("RollingProjection.compute", () => {
         amountCents: 50000,
         occurredOn: salaryDate,
       });
-      const result = await RollingProjection.compute(scoped, { anchorDay: 5, today, cycles: 1 });
+      const result = await RollingProjection.compute(scoped, {
+        anchorDay: 5,
+        today,
+        cycles: 1,
+        dailyBudgetCents: null,
+      });
       await scoped.destroy();
       assert.ok(result.ok);
       return result.value;
@@ -176,5 +206,38 @@ describe("RollingProjection.compute", () => {
     assert.equal(early.to, late.to);
     assert.deepEqual(early.cycleClose, late.cycleClose);
     assert.equal(early.curve.at(-1)?.balanceCents, late.curve.at(-1)?.balanceCents);
+  });
+
+  it("projects variable spend (pace) into future days of the curve", async () => {
+    await BalanceAnchor.set(db, { amountRaw: "3000", dateRaw: "2026-06-01" });
+    // prior window (2026-03-05..2026-06-04, 92 days): 9200 cents → priorDaily 100
+    await insertEntry(db, {
+      type: "expense",
+      paymentMethod: "account",
+      amountCents: 9200,
+      occurredOn: "2026-04-10",
+    });
+
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 1,
+      dailyBudgetCents: null,
+    });
+    assert.ok(result.ok);
+    const { curve, cycleClose, spendingPace } = result.value;
+
+    // no current spend, no budget → effectivePrior = priorDaily = 100; w = 2/30
+    // pace = round((28/30)*100) = 93
+    assert.equal(spendingPace.priorDailyCents, 100);
+    assert.equal(spendingPace.perDayCents, 93);
+
+    // today is not reduced; every future day drops by exactly the pace
+    assert.equal(pointAt(curve, "2026-06-06"), 300000);
+    assert.equal(pointAt(curve, "2026-06-07"), 299907); // -93
+    assert.equal(pointAt(curve, "2026-06-08"), 299814); // -93
+
+    // monotonic decline → trough is the last day; 28 future days from 06-07..07-04
+    assert.deepEqual(cycleClose, { date: "2026-07-04", balanceCents: 300000 - 93 * 28 });
   });
 });
