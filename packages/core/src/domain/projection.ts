@@ -8,6 +8,7 @@ import type { EntryType } from "./entry.ts";
 import { InstallmentPurchase } from "./installment-purchase.ts";
 import { RecurringDefinition } from "./recurring-definition.ts";
 import { SpendingPace } from "./spending-pace.ts";
+import { Statement } from "./statement.ts";
 
 export type ProjectionPoint = Readonly<{ date: IsoDate; balanceCents: number }>;
 
@@ -73,7 +74,19 @@ export const RollingProjection = {
       to: end,
     });
     for (const installment of installments) {
-      add(installment.occurredOn, -installment.amountCents);
+      // Card installments flow through their statements, not directly into the balance.
+      if (installment.paymentMethod === "account") {
+        add(installment.occurredOn, -installment.amountCents);
+      }
+    }
+
+    // Card statements hit the balance as a single cash event on their due date (ADR 0002).
+    const statements = await Statement.dueWithin(db, {
+      from: IsoDate.addDays(anchoredOn, 1),
+      to: end,
+    });
+    for (const statement of statements) {
+      add(statement.dueOn, -statement.amountCents);
     }
 
     const spendingPace = await SpendingPace.compute(db, {

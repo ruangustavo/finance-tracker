@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import { Db } from "../db/client.ts";
 import type { DB } from "../db/schema.ts";
 import { BalanceAnchor } from "../domain/balance-anchor.ts";
+import { CreditCard } from "../domain/credit-card.ts";
 import type { EntryType, PaymentMethod } from "../domain/entry.ts";
+import { Entry } from "../domain/entry.ts";
 import { InstallmentPurchase } from "../domain/installment-purchase.ts";
 import { RollingProjection } from "../domain/projection.ts";
 import { RecurringDefinition } from "../domain/recurring-definition.ts";
@@ -199,6 +201,63 @@ describe("RollingProjection.compute", () => {
     });
     assert.ok(result.ok);
     assert.equal(pointAt(result.value.curve, "2026-06-08"), 100000);
+  });
+
+  it("routes a card purchase to the statement due date, not the purchase date", async () => {
+    await CreditCard.register(db, { name: "nubank", closingDayRaw: "28", dueDayRaw: "5" });
+    await BalanceAnchor.set(db, { amountRaw: "3000", dateRaw: "2026-06-01" });
+    const purchase = await Entry.register(db, {
+      amountRaw: "400",
+      dateRaw: "2026-06-10",
+      categoryName: "mercado",
+      paymentMethodRaw: "creditCard",
+      cardName: "nubank",
+    });
+    assert.ok(purchase.ok);
+
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 2,
+      dailyBudgetCents: null,
+    });
+    assert.ok(result.ok);
+    const { curve } = result.value;
+
+    assert.equal(pointAt(curve, "2026-06-10"), 300000); // purchase does not hit here
+    assert.equal(pointAt(curve, "2026-07-04"), 300000);
+    assert.equal(pointAt(curve, "2026-07-05"), 260000); // statement hits on its due date
+  });
+
+  it("routes a card installment through its statement, not the charge date", async () => {
+    await CreditCard.register(db, { name: "nubank", closingDayRaw: "28", dueDayRaw: "5" });
+    await BalanceAnchor.set(db, { amountRaw: "3000", dateRaw: "2026-06-01" });
+    const purchase = await InstallmentPurchase.register(db, {
+      amountRaw: "200",
+      countRaw: "12",
+      dayRaw: "10",
+      categoryName: "moradia",
+      startRaw: "2026-06-10",
+      paymentMethodRaw: "creditCard",
+      cardName: "nubank",
+    });
+    assert.ok(purchase.ok);
+
+    const result = await RollingProjection.compute(db, {
+      anchorDay: 5,
+      today,
+      cycles: 2,
+      dailyBudgetCents: null,
+    });
+    assert.ok(result.ok);
+    const { curve } = result.value;
+
+    // Unlike an account installment, the card charge does not drop the balance on 06-10.
+    assert.equal(pointAt(curve, "2026-06-09"), 300000);
+    assert.equal(pointAt(curve, "2026-06-10"), 300000);
+    // The June installment rides the statement closing 06-28, due 2026-07-05.
+    assert.equal(pointAt(curve, "2026-07-04"), 300000);
+    assert.equal(pointAt(curve, "2026-07-05"), 280000);
   });
 
   it("is stable against +/-1 day salary deposit variance", async () => {

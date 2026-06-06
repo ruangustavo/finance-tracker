@@ -34,7 +34,7 @@ function resolveRange(
 }
 
 const register = defineCommand({
-  meta: { name: "register", description: "Register an installment purchase (account / PIX)" },
+  meta: { name: "register", description: "Register an installment purchase (account/PIX or card)" },
   args: {
     amount: {
       type: "string",
@@ -56,6 +56,15 @@ const register = defineCommand({
     },
     day: { type: "string", description: "Day of month 1-28 (default: the start date's day)" },
     start: { type: "string", description: "First installment date YYYY-MM-DD (default: today)" },
+    paymentMethod: {
+      type: "string",
+      default: "account",
+      description: "Payment method: account | creditCard (default: account)",
+    },
+    card: {
+      type: "string",
+      description: "Credit-card name — required when paymentMethod=creditCard",
+    },
     description: { type: "string", description: "Optional free-text note" },
   },
   async run({ args }) {
@@ -68,6 +77,8 @@ const register = defineCommand({
           dayRaw: args.day,
           categoryName: args.category,
           startRaw: args.start,
+          paymentMethodRaw: args.paymentMethod,
+          cardName: args.card,
           description: args.description,
         }),
       );

@@ -1,8 +1,10 @@
 import { defineCommand, runMain } from "citty";
 import { anchor } from "./commands/anchor.ts";
 import { balance } from "./commands/balance.ts";
+import { card } from "./commands/card.ts";
 import { edit } from "./commands/edit.ts";
 import { entries } from "./commands/entries.ts";
+import { fatura } from "./commands/fatura.ts";
 import { installment } from "./commands/installment.ts";
 import { possoComprar } from "./commands/posso-comprar.ts";
 import { projecao } from "./commands/projecao.ts";
@@ -27,6 +29,8 @@ const main = defineCommand({
     balance,
     recurring,
     installment,
+    card,
+    fatura,
     projecao,
     status,
     "posso-comprar": possoComprar,

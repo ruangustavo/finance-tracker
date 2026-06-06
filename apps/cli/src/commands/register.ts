@@ -24,6 +24,15 @@ export const register = defineCommand({
       alias: "c",
       description: "Category name — required for expense (must exist)",
     },
+    paymentMethod: {
+      type: "string",
+      default: "account",
+      description: "Payment method: account | creditCard (default: account)",
+    },
+    card: {
+      type: "string",
+      description: "Credit-card name — required when paymentMethod=creditCard",
+    },
     description: { type: "string", description: "Optional free-text note" },
   },
   async run({ args }) {
@@ -35,6 +44,8 @@ export const register = defineCommand({
           amountRaw: args.amount,
           dateRaw: args.date ?? IsoDate.today(),
           categoryName: args.category,
+          paymentMethodRaw: args.paymentMethod,
+          cardName: args.card,
           description: args.description,
         }),
       );

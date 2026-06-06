@@ -18,7 +18,16 @@ import type { InvalidAnchorDay } from "../values/pay-cycle.ts";
 import { PayCycle } from "../values/pay-cycle.ts";
 import type { UnknownCategory } from "./category.ts";
 import { Category } from "./category.ts";
-import type { CategoryRequired } from "./entry.ts";
+import type { UnknownCard } from "./credit-card.ts";
+import { CreditCard } from "./credit-card.ts";
+import type {
+  CardNotAllowed,
+  CardRequired,
+  CategoryRequired,
+  InvalidPaymentMethod,
+  PaymentMethod as PaymentMethodT,
+} from "./entry.ts";
+import { PaymentMethod } from "./entry.ts";
 import type { Period } from "./spending.ts";
 
 export type InstallmentPurchase = Readonly<{
@@ -30,7 +39,8 @@ export type InstallmentPurchase = Readonly<{
   firstChargeOn: string;
   startsOn: string;
   endsOn: string | null;
-  paymentMethod: "account";
+  paymentMethod: PaymentMethodT;
+  cardId: string | null;
   description: string | null;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +53,8 @@ export type Installment = Readonly<{
   categoryId: string;
   amountCents: number;
   occurredOn: string;
+  paymentMethod: PaymentMethodT;
+  cardId: string | null;
   description: string | null;
 }>;
 
@@ -52,6 +64,8 @@ export type RegisterInput = Readonly<{
   dayRaw?: string | undefined;
   categoryName?: string | undefined;
   startRaw?: string | undefined;
+  paymentMethodRaw?: string | undefined;
+  cardName?: string | undefined;
   description?: string | undefined;
 }>;
 
@@ -73,8 +87,12 @@ export type RegisterError =
   | InvalidCount
   | InvalidAnchorDay
   | InvalidDate
+  | InvalidPaymentMethod
   | UnknownCategory
-  | CategoryRequired;
+  | CategoryRequired
+  | CardRequired
+  | CardNotAllowed
+  | UnknownCard;
 export type EditError = RegisterError | InstallmentPurchaseNotFound;
 
 const FORMAT = "yyyy-MM-dd";
@@ -98,6 +116,7 @@ function rowToPurchase(row: Selectable<Database["installment_purchases"]>): Inst
     startsOn: row.starts_on,
     endsOn: row.ends_on,
     paymentMethod: row.payment_method,
+    cardId: row.card_id,
     description: row.description,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -117,6 +136,7 @@ async function insertPurchase(db: DB, purchase: InstallmentPurchase): Promise<vo
       starts_on: purchase.startsOn,
       ends_on: purchase.endsOn,
       payment_method: purchase.paymentMethod,
+      card_id: purchase.cardId,
       description: purchase.description,
       created_at: purchase.createdAt,
       updated_at: purchase.updatedAt,
@@ -158,6 +178,25 @@ export const InstallmentPurchase = {
       return category;
     }
 
+    const paymentMethod = PaymentMethod.parse(input.paymentMethodRaw ?? "account");
+    if (!paymentMethod.ok) {
+      return paymentMethod;
+    }
+
+    let cardId: string | null = null;
+    if (paymentMethod.value === "creditCard") {
+      if (input.cardName === undefined) {
+        return Result.err({ kind: "CardRequired" });
+      }
+      const card = await CreditCard.findByName(db, input.cardName);
+      if (!card.ok) {
+        return card;
+      }
+      cardId = card.value.id;
+    } else if (input.cardName !== undefined) {
+      return Result.err({ kind: "CardNotAllowed" });
+    }
+
     // The first installment is the first day-of-month on or after the start date.
     const sameMonthCharge = setDate(startDate, dayOfMonth.value);
     const firstChargeDate =
@@ -176,7 +215,8 @@ export const InstallmentPurchase = {
       firstChargeOn,
       startsOn: firstChargeOn,
       endsOn: null,
-      paymentMethod: "account",
+      paymentMethod: paymentMethod.value,
+      cardId,
       description: input.description ?? null,
       createdAt: now,
       updatedAt: now,
@@ -212,6 +252,8 @@ export const InstallmentPurchase = {
           categoryId: purchase.categoryId,
           amountCents: purchase.amountCents,
           occurredOn,
+          paymentMethod: purchase.paymentMethod,
+          cardId: purchase.cardId,
           description: purchase.description,
         });
       }
@@ -292,7 +334,8 @@ export const InstallmentPurchase = {
       firstChargeOn: existing.value.firstChargeOn,
       startsOn: IsoDate.addDays(today, 1),
       endsOn: existing.value.endsOn,
-      paymentMethod: "account",
+      paymentMethod: existing.value.paymentMethod,
+      cardId: existing.value.cardId,
       description,
       createdAt: now,
       updatedAt: now,
