@@ -1,4 +1,4 @@
-import { IsoDate, Money, PayCycle, Result, RollingProjection } from "@chatter/core";
+import { BalanceStatus, IsoDate, Money, PayCycle, Result, RollingProjection } from "@chatter/core";
 import { defineCommand } from "citty";
 import { openDb } from "../db.ts";
 import { emit } from "../output.ts";
@@ -51,12 +51,25 @@ export const projecao = defineCommand({
         }
         dailyBudgetCents = budget.value.cents;
       }
+      const projection = await RollingProjection.compute(db, {
+        anchorDay: anchorDay.value,
+        today: IsoDate.today(),
+        cycles: cycles.value,
+        dailyBudgetCents,
+      });
+      if (!projection.ok) {
+        emit(projection);
+        return;
+      }
+      const { curve, cycleClose, ...rest } = projection.value;
       emit(
-        await RollingProjection.compute(db, {
-          anchorDay: anchorDay.value,
-          today: IsoDate.today(),
-          cycles: cycles.value,
-          dailyBudgetCents,
+        Result.ok({
+          ...rest,
+          curve: curve.map((point) => ({
+            ...point,
+            status: BalanceStatus.classify(point.balanceCents),
+          })),
+          cycleClose: { ...cycleClose, status: BalanceStatus.classify(cycleClose.balanceCents) },
         }),
       );
     } finally {

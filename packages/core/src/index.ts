@@ -4,6 +4,8 @@ export type { NoAnchorSet } from "./domain/balance.ts";
 export { Balance } from "./domain/balance.ts";
 export type { SetAnchorError, SetAnchorInput } from "./domain/balance-anchor.ts";
 export { BalanceAnchor } from "./domain/balance-anchor.ts";
+export type { BalanceStatusThresholds } from "./domain/balance-status.ts";
+export { BalanceStatus } from "./domain/balance-status.ts";
 export type { UnknownCategory } from "./domain/category.ts";
 export { Category } from "./domain/category.ts";
 export type {
