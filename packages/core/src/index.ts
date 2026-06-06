@@ -42,6 +42,7 @@ export type {
 export { RecurringDefinition } from "./domain/recurring-definition.ts";
 export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
 export { Spending } from "./domain/spending.ts";
+export { SpendingPace } from "./domain/spending-pace.ts";
 export type { Err, Ok } from "./result.ts";
 export { Result } from "./result.ts";
 export type { InvalidDate } from "./values/iso-date.ts";

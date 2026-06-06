@@ -36,3 +36,19 @@ describe("IsoDate.today", () => {
     assert.match(IsoDate.today(), /^\d{4}-\d{2}-\d{2}$/);
   });
 });
+
+describe("IsoDate.daysBetween", () => {
+  const cases: ReadonlyArray<{ from: string; to: string; days: number }> = [
+    { from: "2026-06-05", to: "2026-06-05", days: 0 },
+    { from: "2026-06-05", to: "2026-06-06", days: 1 },
+    { from: "2026-06-05", to: "2026-07-04", days: 29 },
+    { from: "2026-06-06", to: "2026-06-05", days: -1 },
+    { from: "2025-12-31", to: "2026-01-01", days: 1 },
+  ];
+
+  for (const { from, to, days } of cases) {
+    it(`${from} → ${to} is ${days} days`, () => {
+      assert.equal(IsoDate.daysBetween(from as IsoDate, to as IsoDate), days);
+    });
+  }
+});

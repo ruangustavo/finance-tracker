@@ -21,6 +21,28 @@ describe("PayCycle.current", () => {
   }
 });
 
+describe("PayCycle.priorWindow", () => {
+  const cases: ReadonlyArray<{
+    today: string;
+    anchorDay: number;
+    cycles: number;
+    from: string;
+    to: string;
+  }> = [
+    { today: "2026-06-06", anchorDay: 5, cycles: 3, from: "2026-03-05", to: "2026-06-04" },
+    { today: "2026-06-06", anchorDay: 5, cycles: 1, from: "2026-05-05", to: "2026-06-04" },
+    { today: "2026-01-10", anchorDay: 5, cycles: 3, from: "2025-10-05", to: "2026-01-04" },
+  ];
+
+  for (const { today, anchorDay, cycles, from, to } of cases) {
+    it(`${today} (anchor ${anchorDay}, ${cycles} cycles) → ${from}..${to}`, () => {
+      const window = PayCycle.priorWindow(anchorDay, today as IsoDate, cycles);
+      assert.equal(window.from, from);
+      assert.equal(window.to, to);
+    });
+  }
+});
+
 describe("PayCycle.parseAnchorDay", () => {
   for (const raw of ["1", "5", "28"]) {
     it(`accepts ${raw}`, () => {
