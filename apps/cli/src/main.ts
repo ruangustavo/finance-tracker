@@ -3,6 +3,7 @@ import { anchor } from "./commands/anchor.ts";
 import { balance } from "./commands/balance.ts";
 import { edit } from "./commands/edit.ts";
 import { entries } from "./commands/entries.ts";
+import { projecao } from "./commands/projecao.ts";
 import { recurring } from "./commands/recurring.ts";
 import { register } from "./commands/register.ts";
 import { remove } from "./commands/remove.ts";
@@ -13,7 +14,7 @@ const main = defineCommand({
     name: "chatter",
     description: "chatter — personal finance CLI",
   },
-  subCommands: { register, entries, edit, remove, spending, anchor, balance, recurring },
+  subCommands: { register, entries, edit, remove, spending, anchor, balance, recurring, projecao },
 });
 
 await runMain(main);
