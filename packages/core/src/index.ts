@@ -19,6 +19,8 @@ export type {
   RemoveError,
 } from "./domain/entry.ts";
 export { Entry, EntryType } from "./domain/entry.ts";
+export type { CycleClose, ProjectionPoint } from "./domain/projection.ts";
+export { RollingProjection } from "./domain/projection.ts";
 export type {
   EditError as RecurringEditError,
   EditInput as RecurringEditInput,
