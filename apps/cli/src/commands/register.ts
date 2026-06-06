@@ -6,6 +6,12 @@ import { emit } from "../output.ts";
 export const register = defineCommand({
   meta: { name: "register", description: "Register an entry" },
   args: {
+    type: {
+      type: "string",
+      alias: "t",
+      default: "expense",
+      description: "Entry type: income | expense | transfer",
+    },
     amount: {
       type: "string",
       alias: "a",
@@ -16,8 +22,7 @@ export const register = defineCommand({
     category: {
       type: "string",
       alias: "c",
-      required: true,
-      description: "Category name (must exist)",
+      description: "Category name — required for expense (must exist)",
     },
     description: { type: "string", description: "Optional free-text note" },
   },
@@ -26,6 +31,7 @@ export const register = defineCommand({
     try {
       emit(
         await Entry.register(db, {
+          typeRaw: args.type,
           amountRaw: args.amount,
           dateRaw: args.date ?? IsoDate.today(),
           categoryName: args.category,

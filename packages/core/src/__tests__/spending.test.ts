@@ -74,4 +74,15 @@ describe("Spending.byCategory", () => {
     assert.equal(report.totalCents, summed);
     assert.equal(report.totalCents, 18000);
   });
+
+  it("never lets income or transfers leak into the category report", async () => {
+    await Entry.register(db, { amountRaw: "80", dateRaw: "2026-06-10", categoryName: "mercado" });
+    await Entry.register(db, { typeRaw: "income", amountRaw: "5000", dateRaw: "2026-06-10" });
+    await Entry.register(db, { typeRaw: "transfer", amountRaw: "1000", dateRaw: "2026-06-10" });
+    const report = await Spending.byCategory(db, period("2026-06-05", "2026-07-04"));
+    assert.equal(report.totalCents, 8000);
+    assert.deepEqual(report.byCategory, [
+      { categoryId: "cat-mercado", categoryName: "mercado", totalCents: 8000 },
+    ]);
+  });
 });

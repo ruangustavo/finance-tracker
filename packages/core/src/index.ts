@@ -7,17 +7,18 @@ export { BalanceAnchor } from "./domain/balance-anchor.ts";
 export type { UnknownCategory } from "./domain/category.ts";
 export { Category } from "./domain/category.ts";
 export type {
+  CategoryRequired,
   EditError,
   EditInput,
   EntryNotFound,
-  EntryType,
+  InvalidEntryType,
   Nature,
   PaymentMethod,
   RegisterError,
   RegisterInput,
   RemoveError,
 } from "./domain/entry.ts";
-export { Entry } from "./domain/entry.ts";
+export { Entry, EntryType } from "./domain/entry.ts";
 export type { Period, SpendingByCategory, SpendingReport } from "./domain/spending.ts";
 export { Spending } from "./domain/spending.ts";
 export type { Err, Ok } from "./result.ts";
