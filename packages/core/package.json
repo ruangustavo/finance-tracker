@@ -8,10 +8,12 @@
     "./result": "./src/result.ts",
     "./money": "./src/values/money.ts",
     "./iso-date": "./src/values/iso-date.ts",
+    "./pay-cycle": "./src/values/pay-cycle.ts",
     "./db": "./src/db/client.ts",
     "./db/schema": "./src/db/schema.ts",
     "./category": "./src/domain/category.ts",
-    "./entry": "./src/domain/entry.ts"
+    "./entry": "./src/domain/entry.ts",
+    "./spending": "./src/domain/spending.ts"
   },
   "scripts": {
     "test": "node --test",
